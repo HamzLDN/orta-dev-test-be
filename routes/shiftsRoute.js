@@ -163,29 +163,43 @@ const router = express.Router();
  *         description: Unauthorized
  */
 
+// CLEAN UP THIS JUNK !!!!
+
 
 function isValidTime(time) {
   return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time); //regular exppresison to check if time is in HH:mm format
-} 
+}
 
-async function checks(res, startTime, finishTime, numOfShiftsPerDay) {
+
+async function checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location) {
   if (!isValidTime(startTime) || !isValidTime(finishTime)) {
     return res.status(400).json({ message: "startTime and finishTime must be in HH:mm format." });
   }
 
   const parsedNum = Number(numOfShiftsPerDay);
-  if (isNaN(parsedNum)) return res.status(400).json({ message: "numOfShiftsPerDay must be a number." });
+  if (isNaN(parsedNum)) {
+    return res.status(400).json({ message: "numOfShiftsPerDay must be a number." });
+  }
   
 
-  if (!mongoose.Types.ObjectId.isValid(userId))  return res.status(400).json({ message: "Invalid user ID." });
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+     return res.status(400).json({ message: "Invalid user ID." });
+  }
 
   const userDoc = await User.findById(userId);
-  if (!userDoc) return res.status(404).json({ message: "User not found." });
+  if (!userDoc) {
+      return res.status(404).json({ message: "User not found." });
+    }
   // Validates location id
   let locationDoc;
-  if (mongoose.Types.ObjectId.isValid(location)) locationDoc = await Location.findById(location);
+  if (mongoose.Types.ObjectId.isValid(location)) {
+    locationDoc = await Location.findById(location);
+  }
 
-  if (!locationDoc) return res.status(404).json({ message: "Location not found." });
+  if (!locationDoc) {
+    return res.status(404).json({ message: "Location not found." });
+  }
+  return { parsedNum, locationid: locationDoc._id };
 }
 
 router.post("/", requireAuth, async (req, res) => {
@@ -215,7 +229,7 @@ router.post("/", requireAuth, async (req, res) => {
       return res.status(400).json({ message: "All fields are required." });
     }
     
-    checks(res, startTime, finishTime, numOfShiftsPerDay)
+    const values = await checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location)
 
     // Create the shift
     const newShift = new Shift({
@@ -224,8 +238,8 @@ router.post("/", requireAuth, async (req, res) => {
       typeOfShift,
       startTime,
       finishTime,
-      numOfShiftsPerDay: parsedNum,
-      location: locationDoc._id,
+      numOfShiftsPerDay: values.parsedNum,
+      location: values.locationid,
       user: userId,
       date,
     });
@@ -261,7 +275,7 @@ router.get("/", requireAuth, async (req, res) => {
     const shifts = await Shift.find({ user: userId })
       .populate("user", "name email")
       .populate("location")
-      .sort({ date: 1 });
+      .sort({ date: -1 });
 
     res.json(shifts);
   } catch (err) {
