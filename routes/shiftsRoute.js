@@ -191,16 +191,45 @@ async function checks(res, userId, startTime, finishTime, numOfShiftsPerDay, loc
       return res.status(404).json({ message: "User not found." });
     }
   // Validates location id
-  let locationDoc;
-  if (mongoose.Types.ObjectId.isValid(location)) {
-    locationDoc = await Location.findById(location);
-  }
+  // let locationDoc;
+  // if (mongoose.Types.ObjectId.isValid(location)) {
+  //   locationDoc = await Location.findById(location);
+  // }
+
+  const locationDoc = await Location.findOne({ name: location }, { _id: 1 });
 
   if (!locationDoc) {
     return res.status(404).json({ message: "Location not found." });
   }
   return { parsedNum, locationid: locationDoc._id };
 }
+
+router.delete("/:id", requireAuth, async (req, res) => {
+  console.log("OKKKKK")
+  const shiftId = req.params.id;
+  const userId = req.user?.id || req.user?._id;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(shiftId)) {
+      return res.status(400).json({ message: "Invalid shift ID." });
+    }
+
+    const shift = await Shift.findById(shiftId);
+    if (!shift) {
+      return res.status(404).json({ message: "Shift not found." });
+    }
+
+    if (shift.user.toString() !== userId) {
+      return res.status(403).json({ message: "Forbidden: cannot delete other users' shifts" });
+    }
+
+    await Shift.findByIdAndDelete(shiftId);
+    res.status(200).json({ message: "Shift deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting shift:", err);
+    res.status(500).json({ message: "Server error." });
+  }
+});
 
 router.post("/", requireAuth, async (req, res) => {
   const {
