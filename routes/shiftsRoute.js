@@ -204,6 +204,60 @@ async function checks(res, userId, startTime, finishTime, numOfShiftsPerDay, loc
   return { parsedNum, locationid: locationDoc._id };
 }
 
+router.put("/:id", requireAuth, async (req, res) => {
+  const shiftId = req.params.id;
+  const userId = req.user?.id || req.user?._id;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(shiftId)) {
+      return res.status(400).json({ message: "Invalid shift ID." });
+    }
+
+    const shift = await Shift.findById(shiftId);
+    if (!shift) {
+      return res.status(404).json({ message: "Shift not found." });
+    }
+
+    if (shift.user.toString() !== userId) {
+      return res.status(403).json({ message: "Forbidden: cannot update other users' shifts" });
+    }
+
+    const { title, role, typeOfShift, startTime, finishTime, numOfShiftsPerDay, location, date } = req.body;
+
+    if (
+      !title ||
+      !role ||
+      !startTime ||
+      !finishTime ||
+      !location ||
+      !date ||
+      !numOfShiftsPerDay
+    ) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    const values = await checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location);
+
+    // Update the shift
+    shift.title = title;
+    shift.role = role;
+    shift.typeOfShift = typeOfShift;
+    shift.startTime = startTime;
+    shift.finishTime = finishTime;
+    shift.numOfShiftsPerDay = values.parsedNum;
+    shift.location = values.locationid;
+    shift.date = date;
+
+    const updatedShift = await shift.save();
+    const populatedShift = await Shift.findById(updatedShift._id).populate("user").populate("location");
+    
+    res.status(200).json(populatedShift);
+  } catch (err) {
+    console.error("Error updating shift:", err);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
 router.delete("/:id", requireAuth, async (req, res) => {
   console.log("OKKKKK")
   const shiftId = req.params.id;
@@ -242,7 +296,7 @@ router.post("/", requireAuth, async (req, res) => {
     location,
     date
   } = req.body;
-
+  console.log(req.body)
   const userId = req.user?.id || req.user?._id;
 
   try {
@@ -259,7 +313,7 @@ router.post("/", requireAuth, async (req, res) => {
     }
     
     const values = await checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location)
-
+    
     // Create the shift
     const newShift = new Shift({
       title,
@@ -275,6 +329,7 @@ router.post("/", requireAuth, async (req, res) => {
 
     const savedShift = await newShift.save();
     const populatedShift = await Shift.findById(savedShift._id).populate("user").populate("location");
+    console.log("DELETED SHIFTS")
     res.status(201).json(populatedShift);
   } catch (err) {
     console.log(err);
