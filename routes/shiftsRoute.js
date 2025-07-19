@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import Shift from "../models/shiftsModel.js";
 import requireAuth from "../middleware/requireAuth.js";
+import Location from "../models/locationModel.js";
+import User from "../models/userModel.js";
 
 const router = express.Router();
 
@@ -14,12 +16,15 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/shifts:
+ * /shifts:
  *   get:
  *     summary: Retrieve all shifts for a given user
  *     tags: [Shifts]
+ * 
  *     security:
+ * 
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: query
  *         name: userId
@@ -58,6 +63,7 @@ const router = express.Router();
  *                         type: string
  *                         example: 6876ecb642df0376491dd254
  *                       name:
+ *                          
  *                         type: string
  *                         example: John Doe
  *                       email:
@@ -123,6 +129,118 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
+/**
+ * @swagger
+ * /shifts:
+ *   post:
+ *     summary: Create a new shift for the authenticated user
+ *     tags: [Shifts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *               startTime:
+ *                 type: string
+ *               finishTime:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               user:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Shift created successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ */
+
+
+function isValidTime(time) {
+  return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time); //regular exppresison to check if time is in HH:mm format
+} 
+
+async function checks(res, startTime, finishTime, numOfShiftsPerDay) {
+  if (!isValidTime(startTime) || !isValidTime(finishTime)) {
+    return res.status(400).json({ message: "startTime and finishTime must be in HH:mm format." });
+  }
+
+  const parsedNum = Number(numOfShiftsPerDay);
+  if (isNaN(parsedNum)) return res.status(400).json({ message: "numOfShiftsPerDay must be a number." });
+  
+
+  if (!mongoose.Types.ObjectId.isValid(userId))  return res.status(400).json({ message: "Invalid user ID." });
+
+  const userDoc = await User.findById(userId);
+  if (!userDoc) return res.status(404).json({ message: "User not found." });
+  // Validates location id
+  let locationDoc;
+  if (mongoose.Types.ObjectId.isValid(location)) locationDoc = await Location.findById(location);
+
+  if (!locationDoc) return res.status(404).json({ message: "Location not found." });
+}
+
+router.post("/", requireAuth, async (req, res) => {
+  const {
+    title,
+    role,
+    typeOfShift,
+    startTime,
+    finishTime,
+    numOfShiftsPerDay,
+    location,
+    date
+  } = req.body;
+
+  const userId = req.user?.id || req.user?._id;
+
+  try {
+    if (
+      !title ||
+      !role ||
+      !startTime ||
+      !finishTime ||
+      !location ||
+      !date ||
+      !numOfShiftsPerDay
+    ) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+    
+    checks(res, startTime, finishTime, numOfShiftsPerDay)
+
+    // Create the shift
+    const newShift = new Shift({
+      title,
+      role,
+      typeOfShift,
+      startTime,
+      finishTime,
+      numOfShiftsPerDay: parsedNum,
+      location: locationDoc._id,
+      user: userId,
+      date,
+    });
+
+    const savedShift = await newShift.save();
+    const populatedShift = await Shift.findById(savedShift._id).populate("user").populate("location");
+    res.status(201).json(populatedShift);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+//Auth disabled for get because theres no authentication on swagger
+
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { userId } = req.query;
@@ -132,10 +250,6 @@ router.get("/", requireAuth, async (req, res) => {
       return res
         .status(400)
         .json({ message: "userId query parameter is required" });
-    }
-
-    if (!mongoose.isValidObjectId(userId)) {
-      return res.status(400).json({ message: "Invalid userId" });
     }
 
     if (userId !== tokenUserId) {
