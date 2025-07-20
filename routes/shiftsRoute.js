@@ -130,30 +130,72 @@ const router = express.Router();
  *         description: Internal server error
  */
 /**
+/**
  * @swagger
  * /shifts:
  *   post:
  *     summary: Create a new shift for the authenticated user
  *     tags: [Shifts]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - title
+ *               - role
+ *               - typeOfShift
+ *               - date
+ *               - startTime
+ *               - finishTime
+ *               - numOfShiftsPerDay
+ *               - location
  *             properties:
  *               title:
  *                 type: string
+ *                 example: New title
+ *               role:
+ *                 type: string
+ *                 example: roller
+ *               typeOfShift:
+ *                 type: string
+ *                 example: Weekdays
  *               date:
  *                 type: string
+ *                 format: date
+ *                 example: 2025-07-27
  *               startTime:
  *                 type: string
+ *                 example: "17:09"
  *               finishTime:
  *                 type: string
+ *                 example: "22:09"
+ *               numOfShiftsPerDay:
+ *                 type: integer
+ *                 example: 2
  *               location:
- *                 type: string
- *               user:
- *                 type: string
+ *                 type: object
+ *                 required:
+ *                   - name
+ *                   - postCode
+ *                   - constituency
+ *                   - adminDistrict
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                     example: LondonCity
+ *                   postCode:
+ *                     type: string
+ *                     example: M50 3UQ
+ *                   constituency:
+ *                     type: string
+ *                     example: Salford North
+ *                   adminDistrict:
+ *                     type: string
+ *                     example: City of Salford
  *     responses:
  *       201:
  *         description: Shift created successfully
@@ -163,7 +205,7 @@ const router = express.Router();
  *         description: Unauthorized
  */
 
-// CLEAN UP THIS JUNK !!!!
+// Will put into a yml file soon
 
 
 function isValidTime(time) {
@@ -293,6 +335,7 @@ router.post("/", requireAuth, async (req, res) => {
     location,
     date
   } = req.body;
+  console.log(req.body)
   const userId = req.user?.id || req.user?._id;
 
   try {
@@ -328,7 +371,8 @@ router.post("/", requireAuth, async (req, res) => {
         distance: location.distance,
       });
       await locationDoc.save();
-    }//returns location id
+    }//returns location id 
+
     console.log(locationDoc._id)
     const newShift = new Shift({
       title,
