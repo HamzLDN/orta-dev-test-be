@@ -171,7 +171,7 @@ function isValidTime(time) {
 }
 
 
-async function checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location) {
+async function checks(res, userId, startTime, finishTime, numOfShiftsPerDay) {
   if (!isValidTime(startTime) || !isValidTime(finishTime)) {
     return res.status(400).json({ message: "startTime and finishTime must be in HH:mm format." });
   }
@@ -190,23 +190,14 @@ async function checks(res, userId, startTime, finishTime, numOfShiftsPerDay, loc
   if (!userDoc) {
       return res.status(404).json({ message: "User not found." });
     }
-  // Validates location id
-  // let locationDoc;
-  // if (mongoose.Types.ObjectId.isValid(location)) {
-  //   locationDoc = await Location.findById(location);
-  // }
 
-  const locationDoc = await Location.findOne({ name: location }, { _id: 1 });
-
-  if (!locationDoc) {
-    return res.status(404).json({ message: "Location not found." });
-  }
-  return { parsedNum, locationid: locationDoc._id };
+  return { parsedNum };
 }
 
 router.put("/:id", requireAuth, async (req, res) => {
   const shiftId = req.params.id;
   const userId = req.user?.id || req.user?._id;
+  console.log(shiftId)
 
   try {
     if (!mongoose.Types.ObjectId.isValid(shiftId)) {
@@ -235,9 +226,9 @@ router.put("/:id", requireAuth, async (req, res) => {
     ) {
       return res.status(400).json({ message: "All fields are required." });
     }
-
-    const values = await checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location);
-
+    console.log(req.body)
+    const values = await checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location.name);
+    console.log(location.name)
     // Update the shift
     shift.title = title;
     shift.role = role;
@@ -245,12 +236,19 @@ router.put("/:id", requireAuth, async (req, res) => {
     shift.startTime = startTime;
     shift.finishTime = finishTime;
     shift.numOfShiftsPerDay = values.parsedNum;
-    shift.location = values.locationid;
     shift.date = date;
+
+    await Location.findByIdAndUpdate(shift.location, {
+      name: location.name,
+      postCode: location.postCode,
+      distance: location.distance,
+      constituency: location.constituency,
+      adminDistrict: location.adminDistrict,
+    });
 
     const updatedShift = await shift.save();
     const populatedShift = await Shift.findById(updatedShift._id).populate("user").populate("location");
-    
+    console.log(populatedShift)
     res.status(200).json(populatedShift);
   } catch (err) {
     console.error("Error updating shift:", err);
@@ -284,7 +282,6 @@ router.delete("/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 });
-
 router.post("/", requireAuth, async (req, res) => {
   const {
     title,
@@ -296,7 +293,6 @@ router.post("/", requireAuth, async (req, res) => {
     location,
     date
   } = req.body;
-  console.log(req.body)
   const userId = req.user?.id || req.user?._id;
 
   try {
@@ -306,15 +302,34 @@ router.post("/", requireAuth, async (req, res) => {
       !startTime ||
       !finishTime ||
       !location ||
+      !location.name ||
       !date ||
       !numOfShiftsPerDay
     ) {
       return res.status(400).json({ message: "All fields are required." });
     }
-    
-    const values = await checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location)
-    
-    // Create the shift
+
+    const values = await checks(
+      res,
+      userId,
+      startTime,
+      finishTime,
+      numOfShiftsPerDay,
+      location.name
+    );
+    let locationDoc = await Location.findOne({ postCode: location.postCode });
+
+    if (!locationDoc) {
+      locationDoc = new Location({
+        name: location.name,
+        postCode: location.postCode,
+        constituency: location.constituency,
+        adminDistrict: location.adminDistrict,
+        distance: location.distance,
+      });
+      await locationDoc.save();
+    }//returns location id
+    console.log(locationDoc._id)
     const newShift = new Shift({
       title,
       role,
@@ -322,22 +337,19 @@ router.post("/", requireAuth, async (req, res) => {
       startTime,
       finishTime,
       numOfShiftsPerDay: values.parsedNum,
-      location: values.locationid,
+      location: locationDoc._id,
       user: userId,
       date,
     });
+    
 
     const savedShift = await newShift.save();
-    const populatedShift = await Shift.findById(savedShift._id).populate("user").populate("location");
-    console.log("DELETED SHIFTS")
-    res.status(201).json(populatedShift);
+    return res.status(201).json(savedShift);
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error." });
+    console.error("Error creating shift:", err);
+    return res.status(500).json({ message: "Server error." });
   }
 });
-
-//Auth disabled for get because theres no authentication on swagger
 
 router.get("/", requireAuth, async (req, res) => {
   try {
