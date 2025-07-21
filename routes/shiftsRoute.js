@@ -1,12 +1,3 @@
-import express from "express";
-import mongoose from "mongoose";
-import Shift from "../models/shiftsModel.js";
-import requireAuth from "../middleware/requireAuth.js";
-import Location from "../models/locationModel.js";
-import User from "../models/userModel.js";
-
-const router = express.Router();
-
 /**
  * @swagger
  * tags:
@@ -15,8 +6,14 @@ const router = express.Router();
  */
 
 
-// Will put into a yml file soon
+import express from "express";
+import mongoose from "mongoose";
+import Shift from "../models/shiftsModel.js";
+import requireAuth from "../middleware/requireAuth.js";
+import Location from "../models/locationModel.js";
+import User from "../models/userModel.js";
 
+const router = express.Router();
 
 function isValidTime(time) {
   return /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time); //regular exppresison to check if time is in HH:mm format
@@ -80,7 +77,7 @@ router.put("/:id", requireAuth, async (req, res) => {
     }
     console.log(req.body)
     const values = await checks(res, userId, startTime, finishTime, numOfShiftsPerDay, location.name);
-    console.log(location.name)
+
     // Update the shift
     shift.title = title;
     shift.role = role;
@@ -108,7 +105,6 @@ router.put("/:id", requireAuth, async (req, res) => {
 });
 
 router.delete("/:id", requireAuth, async (req, res) => {
-  console.log("OKKKKK")
   const shiftId = req.params.id;
   const userId = req.user?.id || req.user?._id;
 
@@ -133,6 +129,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 router.post("/", requireAuth, async (req, res) => {
   const {
     title,
@@ -144,9 +141,9 @@ router.post("/", requireAuth, async (req, res) => {
     location,
     date
   } = req.body;
-  console.log(req.body)
-  const userId = req.user?.id || req.user?._id;
 
+
+  const userId = req.user?.id || req.user?._id;
   try {
     if (
       !title ||
@@ -160,7 +157,7 @@ router.post("/", requireAuth, async (req, res) => {
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
-
+    // Validates that everything is in the correct
     const values = await checks(
       res,
       userId,
@@ -186,8 +183,6 @@ router.post("/", requireAuth, async (req, res) => {
       });
       await locationDoc.save();
     }
-
-    console.log(locationDoc._id)
     const newShift = new Shift({
       title,
       role,
