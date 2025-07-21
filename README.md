@@ -7,6 +7,18 @@ This is the backend system for the **Shift Manager** application, built with **N
 - 🔁 Password reset via email with secure token flow
 - 📄 Auto-generated API docs using Swagger (OpenAPI 3.0)
 
+## New Features (CRUD capabilities)
+- View added shifts and see if its either in progress, pending, or complete
+- Create Shifts with a decorated form
+- Edit shifts with a decorated form and confirmation
+- A button to delete shifts no longer needed with confirmation
+- Static clock-in and clock-out button
+
+## Requests you can do on PortSwagger on /api/shifts
+- GET
+- POST
+- PUT
+- DELETE
 ---
 
 ## 📂 Folder Structure
@@ -32,7 +44,7 @@ orta-dev-test-be/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Wahhab1801/orta-dev-test-be.git
+git clone --branch feature/shift-crud --single-branch https://github.com/HamzLDN/orta-dev-test-be.git
 cd orta-dev-test-be
 ```
 
