@@ -21,6 +21,10 @@ This is the backend system for the **Shift Manager** application, built with **N
 - DELETE
 ---
 
+## Trade-Offs with MongoDB
+It's great and simple that MongoDB allows you to enter any type of data. However, if you are careless, you may save the incorrect files, making it difficult to correct or figure out what went wrong later.
+
+
 ## 📂 Folder Structure
 
 ```
