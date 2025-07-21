@@ -1,0 +1,89 @@
+
+/shifts:
+  post:
+    summary: Create a new shift for the authenticated user
+    tags: [Shifts]
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - title
+              - role
+              - typeOfShift
+              - date
+              - startTime
+              - finishTime
+              - numOfShiftsPerDay
+              - location
+            properties:
+              title:
+                type: string
+                example: New title
+              role:
+                type: string
+                example: roller
+              typeOfShift:
+                type: string
+                example: Weekdays
+              date:
+                type: string
+                format: date
+                example: 2025-07-27
+              startTime:
+                type: string
+                example: "17:09"
+              finishTime:
+                type: string
+                example: "22:09"
+              numOfShiftsPerDay:
+                type: integer
+                example: 2
+              location:
+                type: object
+                required:
+                  - name
+                  - postCode
+                  - constituency
+                  - adminDistrict
+                properties:
+                  name:
+                    type: string
+                    example: LondonCity
+                  postCode:
+                    type: string
+                    example: M50 3UQ
+                  constituency:
+                    type: string
+                    example: Salford North
+                  adminDistrict:
+                    type: string
+                    example: City of Salford
+                  cordinates:
+                    type: object
+                    required:
+                      - longitude
+                      - latitude
+                      - useRotaCloud
+                    properties:
+                      longitude:
+                        type: number
+                        example: -2.286226
+                      latitude:
+                        type: number
+                        example: 53.466921
+                      useRotaCloud:
+                        type: boolean
+                        example: true
+    responses:
+      201:
+        description: Shift created successfully
+      500:
+        description: Server Error
+      401:
+        description: Unauthorized
+

@@ -1,0 +1,64 @@
+/shifts/{id}:
+  delete:
+    summary: Delete the existing shift with ID
+    tags: [Shifts]
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the shift to delete
+        schema:
+          type: string
+    responses:
+      200:
+        description: Shift deleted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Shift deleted successfully
+      400:
+        description: Invalid shift ID
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Invalid shift data provided
+      404:
+        description: Shift not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Shift not found
+      403:
+        description: Cannot access other users shift
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: You do not have permission to delete this shift
+      500:
+        description: Server Error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: An error occurred while deleing the shift

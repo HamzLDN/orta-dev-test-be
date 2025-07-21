@@ -1,0 +1,118 @@
+/shifts/{id}:
+  put:
+    summary: Update an existing shift by ID
+    tags: [Shifts]
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID of the shift to update
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - title
+              - role
+              - typeOfShift
+              - date
+              - startTime
+              - finishTime
+              - numOfShiftsPerDay
+              - location
+            properties:
+              title:
+                type: string
+                example: New title
+              role:
+                type: string
+                example: roller
+              typeOfShift:
+                type: array
+                items:
+                  type: string
+                example: [ "Weekdays" ]
+              date:
+                type: string
+                format: date
+                example: 2025-07-27
+              startTime:
+                type: string
+                example: "17:09"
+              finishTime:
+                type: string
+                example: "22:09"
+              numOfShiftsPerDay:
+                type: integer
+                example: 2
+              location:
+                type: object
+                required:
+                  - name
+                  - postCode
+                  - constituency
+                  - adminDistrict
+                properties:
+                  name:
+                    type: string
+                    example: LondonCity
+                  postCode:
+                    type: string
+                    example: M50 3UQ
+                  constituency:
+                    type: string
+                    example: Salford North
+                  adminDistrict:
+                    type: string
+                    example: City of Salford
+                  cordinates:
+                    type: object
+                    required:
+                      - longitude
+                      - latitude
+                      - useRotaCloud
+                    properties:
+                      longitude:
+                        type: number
+                        example: -2.286226
+                      latitude:
+                        type: number
+                        example: 53.466921
+                      useRotaCloud:
+                        type: boolean
+                        example: true
+    responses:
+      200:
+        description: Shift updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: Shift updated!
+      400:
+        description: Bad Request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  enum:
+                    - Invalid shift ID
+                    - All fields are required
+      401:
+        description: Unauthorized
+      403:
+        description: Cannot update other users shifts
+      404:
+        description: Shift not found
