@@ -14,196 +14,6 @@ const router = express.Router();
  *   description: Retrieve and manage user shifts
  */
 
-/**
- * @swagger
- * /shifts:
- *   get:
- *     summary: Retrieve all shifts for a given user
- *     tags: [Shifts]
- * 
- *     security:
- * 
- *       - bearerAuth: []
- *
- *     parameters:
- *       - in: query
- *         name: userId
- *         schema:
- *           type: string
- *         required: true
- *         description: ObjectId of the user whose shifts to fetch
- *     responses:
- *       200:
- *         description: A list of shifts, populated with user and location
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   _id:
- *                     type: string
- *                     example: 60f7a3e5b4dcb826d8fe1234
- *                   title:
- *                     type: string
- *                     example: Short Day
- *                   role:
- *                     type: string
- *                     example: Support Worker
- *                   typeOfShift:
- *                     type: array
- *                     items:
- *                       type: string
- *                     example: [ "Weekdays" ]
- *                   user:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: 6876ecb642df0376491dd254
- *                       name:
- *                          
- *                         type: string
- *                         example: John Doe
- *                       email:
- *                         type: string
- *                         format: email
- *                         example: john@example.com
- *                   location:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: 6876ec09d260b087559e5fff
- *                       name:
- *                         type: string
- *                         example: Clippers House, Clippers Quay
- *                       postCode:
- *                         type: string
- *                         example: M50 3XP
- *                       distance:
- *                         type: number
- *                         example: 0
- *                       constituency:
- *                         type: string
- *                         example: Salford and Eccles
- *                       adminDistrict:
- *                         type: string
- *                         example: Salford
- *                       cordinates:
- *                         type: object
- *                         properties:
- *                           longitude:
- *                             type: number
- *                             example: -2.286226
- *                           latitude:
- *                             type: number
- *                             example: 53.466921
- *                           useRotaCloud:
- *                             type: boolean
- *                             example: true
- *                   startTime:
- *                     type: string
- *                     example: "13:00"
- *                   finishTime:
- *                     type: string
- *                     example: "18:00"
- *                   numOfShiftsPerDay:
- *                     type: number
- *                     example: 1
- *                   date:
- *                     type: string
- *                     format: date
- *                     example: "2025-06-17"
- *                   createdAt:
- *                     type: string
- *                     format: date-time
- *                   updatedAt:
- *                     type: string
- *                     format: date-time
- *       400:
- *         description: Bad request – userId missing or invalid
- *       403:
- *         description: Forbidden – userId does not match authenticated user
- *       500:
- *         description: Internal server error
- */
-/**
-/**
- * @swagger
- * /shifts:
- *   post:
- *     summary: Create a new shift for the authenticated user
- *     tags: [Shifts]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - title
- *               - role
- *               - typeOfShift
- *               - date
- *               - startTime
- *               - finishTime
- *               - numOfShiftsPerDay
- *               - location
- *             properties:
- *               title:
- *                 type: string
- *                 example: New title
- *               role:
- *                 type: string
- *                 example: roller
- *               typeOfShift:
- *                 type: string
- *                 example: Weekdays
- *               date:
- *                 type: string
- *                 format: date
- *                 example: 2025-07-27
- *               startTime:
- *                 type: string
- *                 example: "17:09"
- *               finishTime:
- *                 type: string
- *                 example: "22:09"
- *               numOfShiftsPerDay:
- *                 type: integer
- *                 example: 2
- *               location:
- *                 type: object
- *                 required:
- *                   - name
- *                   - postCode
- *                   - constituency
- *                   - adminDistrict
- *                 properties:
- *                   name:
- *                     type: string
- *                     example: LondonCity
- *                   postCode:
- *                     type: string
- *                     example: M50 3UQ
- *                   constituency:
- *                     type: string
- *                     example: Salford North
- *                   adminDistrict:
- *                     type: string
- *                     example: City of Salford
- *     responses:
- *       201:
- *         description: Shift created successfully
- *       400:
- *         description: Bad request
- *       401:
- *         description: Unauthorized
- */
 
 // Will put into a yml file soon
 
@@ -243,16 +53,16 @@ router.put("/:id", requireAuth, async (req, res) => {
 
   try {
     if (!mongoose.Types.ObjectId.isValid(shiftId)) {
-      return res.status(400).json({ message: "Invalid shift ID." });
+      return res.status(400).json({ message: "Invalid shift ID" });
     }
 
     const shift = await Shift.findById(shiftId);
     if (!shift) {
-      return res.status(404).json({ message: "Shift not found." });
+      return res.status(404).json({ message: "Shift not found" });
     }
 
     if (shift.user.toString() !== userId) {
-      return res.status(403).json({ message: "Forbidden: cannot update other users' shifts" });
+      return res.status(403).json({ message: "Cannot update other users shifts" });
     }
 
     const { title, role, typeOfShift, startTime, finishTime, numOfShiftsPerDay, location, date } = req.body;
@@ -289,12 +99,11 @@ router.put("/:id", requireAuth, async (req, res) => {
     });
 
     const updatedShift = await shift.save();
-    const populatedShift = await Shift.findById(updatedShift._id).populate("user").populate("location");
-    console.log(populatedShift)
-    res.status(200).json(populatedShift);
+    await Shift.findById(updatedShift._id).populate("user").populate("location");
+    res.status(200).json({ message: "Shift updated!"});
   } catch (err) {
     console.error("Error updating shift:", err);
-    res.status(500).json({ message: "Server error." });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -305,23 +114,23 @@ router.delete("/:id", requireAuth, async (req, res) => {
 
   try {
     if (!mongoose.Types.ObjectId.isValid(shiftId)) {
-      return res.status(400).json({ message: "Invalid shift ID." });
+      return res.status(400).json({ message: "Invalid shift ID" });
     }
 
     const shift = await Shift.findById(shiftId);
     if (!shift) {
-      return res.status(404).json({ message: "Shift not found." });
+      return res.status(404).json({ message: "Shift not found" });
     }
 
     if (shift.user.toString() !== userId) {
-      return res.status(403).json({ message: "Forbidden: cannot delete other users' shifts" });
+      return res.status(403).json({ message: "Cannot access other users shift" });
     }
 
     await Shift.findByIdAndDelete(shiftId);
-    res.status(200).json({ message: "Shift deleted successfully." });
+    res.status(200).json({ message: "Shift deleted successfully" });
   } catch (err) {
     console.error("Error deleting shift:", err);
-    res.status(500).json({ message: "Server error." });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 router.post("/", requireAuth, async (req, res) => {
@@ -349,7 +158,7 @@ router.post("/", requireAuth, async (req, res) => {
       !date ||
       !numOfShiftsPerDay
     ) {
-      return res.status(400).json({ message: "All fields are required." });
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     const values = await checks(
@@ -392,11 +201,11 @@ router.post("/", requireAuth, async (req, res) => {
     });
     
 
-    const savedShift = await newShift.save();
-    return res.status(201).json(savedShift);
+    await newShift.save();
+    return res.status(201).json({message: "Shift created successfully"});
   } catch (err) {
     console.error("Error creating shift:", err);
-    return res.status(500).json({ message: "Server error." });
+    return res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -414,7 +223,7 @@ router.get("/", requireAuth, async (req, res) => {
     if (userId !== tokenUserId) {
       return res
         .status(403)
-        .json({ message: "Forbidden: cannot fetch other users' shifts" });
+        .json({ message: 'Forbidden: cannot fetch other users shifts' });
     }
 
     const shifts = await Shift.find({ user: userId })
