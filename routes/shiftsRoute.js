@@ -87,14 +87,20 @@ router.put("/:id", requireAuth, async (req, res) => {
     shift.numOfShiftsPerDay = values.parsedNum;
     shift.date = date;
 
-    await Location.findByIdAndUpdate(shift.location, {
+    const newLocation = await Location.create({
       name: location.name,
       postCode: location.postCode,
       distance: location.distance,
       constituency: location.constituency,
       adminDistrict: location.adminDistrict,
+      cordinates: {
+        longitude: location.cordinates.longitude,
+        latitude: location.cordinates.latitude,
+        useRotaCloud: location.cordinates.useRotaCloud,
+      }
     });
-
+    
+    shift.location = newLocation._id;
     const updatedShift = await shift.save();
     await Shift.findById(updatedShift._id).populate("user").populate("location");
     res.status(200).json({ message: "Shift updated!"});
