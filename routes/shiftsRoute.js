@@ -369,9 +369,14 @@ router.post("/", requireAuth, async (req, res) => {
         constituency: location.constituency,
         adminDistrict: location.adminDistrict,
         distance: location.distance,
+        cordinates: {
+          longitude: location.cordinates.longitude,
+          latitude: location.cordinates.latitude,
+          useRotaCloud: location.cordinates.useRotaCloud,
+        }
       });
       await locationDoc.save();
-    }//returns location id 
+    }
 
     console.log(locationDoc._id)
     const newShift = new Shift({
