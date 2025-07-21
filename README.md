@@ -49,7 +49,7 @@ Create a `.env` file in the root with the following variables:
 ```env
 MONGO_URI=<your-mongodb-connection-uri>
 PORT=8000
-JWT_SECRET=secret1234
+JWT_SECRET=anothersecret
 NODE_ENV=development
 ```
 
